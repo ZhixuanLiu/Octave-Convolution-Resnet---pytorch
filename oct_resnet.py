@@ -1,6 +1,9 @@
+#  mostly copied from https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py 
+#  changed all conv to Octconv
+#  
+
 import torch 
 import torch.nn as nn 
-
 
 class Interpolate(nn.Module):
     def __init__(self, scale_factor, mode):
@@ -13,7 +16,6 @@ class Interpolate(nn.Module):
         x = self.interp(x, scale_factor=self.scale_factor, mode=self.mode, align_corners=None)
         return x
 
-#OctConv(self, in_planes, out_planes, kernel, stride ,padding, groups=1, dilation=1)
 class OctConv(nn.Module):
     def __init__(self, in_planes, out_planes, kernel, stride ,padding, groups=1, dilation=1):
         super(OctConv, self).__init__()
@@ -50,7 +52,6 @@ class OctConv(nn.Module):
         #print ('y_h shape: ',y_h.shape, ' , y_l shape: ', y_l.shape)
         return [y_h, y_l]
 
-
 class OctNorm(nn.Module):
     def __init__(self, in_place):
         super(OctNorm, self).__init__()
@@ -82,8 +83,6 @@ class OctRelu(nn.Module):
         x_l = self.Relu(x_l)
         return [x_h, x_l]
 
-    
-# self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1) 
 class OctMaxPool(nn.Module):
     def __init__(self, kernel =[3,3], stride=[2,2], padding=[1,1]):
         super(OctMaxPool, self).__init__()
@@ -97,8 +96,6 @@ class OctMaxPool(nn.Module):
         x_h, x_l = self.MaxPool_h(x_h), self.MaxPool_l(x_l)
         return [x_h, x_l]
 
-
-# nn.AdaptiveAvgPool2d((1, 1))
 class OctAvePool(nn.Module):
     def __init__(self, kernel = (1,1)):
         super(OctAvePool, self).__init__()
@@ -112,23 +109,6 @@ class OctAvePool(nn.Module):
         x_h, x_l = self.AvePool_h(x_h), self.AvePool_l(x_l)
         return [x_h, x_l]
  
-import torch 
-import torch.nn as nn
-#from .utils import load_state_dict_from_url
-
-
-
-
-#def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
-#    """3x3 convolution with padding"""
-#    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-#                     padding=dilation, groups=groups, bias=False, dilation=dilation)
-
-
-#def conv1x1(in_planes, out_planes, stride=1):
-#    """1x1 convolution"""
-#    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
 def conv3x3(in_planes, out_planes, stride=[1,1], groups=1, dilation=[1,1]):
     """3x3 convolution with padding"""
     return OctConv(in_planes, out_planes, kernel = [3,3], stride=stride,
@@ -173,12 +153,9 @@ class BasicBlock(nn.Module):
         out[1] += identity[1]
         out = self.relu(out)
         return out
-
-
-# Bottleneck(inplanes, planes, stride=[1,1], downsample=None, groups=1,base_width=64, dilation=[1,1], norm_layer=None)    
+ 
 class Bottleneck(nn.Module):
     expansion = 4
-
     def __init__(self, inplanes, planes, stride=[1,1], downsample=None, groups=1,
                  base_width=64, dilation=[1,1], norm_layer=None):
         super(Bottleneck, self).__init__()
@@ -220,12 +197,12 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ResNet(nn.Module):
+class Oct_ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
-        super(ResNet, self).__init__()
+        super(Oct_ResNet, self).__init__()
         if norm_layer is None:
             #norm_layer = nn.BatchNorm2d
             norm_layer = OctNorm
@@ -324,75 +301,28 @@ class ResNet(nn.Module):
         return x
 
 
-def _resnet(arch, inplanes, planes, pretrained, progress, **kwargs):
-    model = ResNet(inplanes, planes, **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+def _oct_resnet(arch, inplanes, planes, progress, **kwargs):
+    model = Oct_ResNet(inplanes, planes, **kwargs)
     return model
 
 
-def resnet18(pretrained=False, progress=True, **kwargs):
-    """Constructs a ResNet-18 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
+def oct_resnet18( progress=True, **kwargs):
+    return _oct_resnet('oct_resnet18', BasicBlock, [2, 2, 2, 2], progress,
                    **kwargs)
 
-
-def resnet34(pretrained=False, progress=True, **kwargs):
-    """Constructs a ResNet-34 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
+def oct_resnet34( progress=True, **kwargs):
+    return _oct_resnet('oct_resnet34', BasicBlock, [3, 4, 6, 3], progress,
                    **kwargs)
 
-
-def resnet50(pretrained=False, progress=True, **kwargs):
-    """Constructs a ResNet-50 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
+def oct_resnet50( progress=True, **kwargs):
+    return _oct_resnet('oct_resnet50', Bottleneck, [3, 4, 6, 3], progress,
                    **kwargs)
 
-
-def resnet101(pretrained=False, progress=True, **kwargs):
-    """Constructs a ResNet-101 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
+def oct_resnet101( progress=True, **kwargs):
+    return _oct_resnet('oct_resnet101', Bottleneck, [3, 4, 23, 3], progress,
                    **kwargs)
 
-
-def resnet152(pretrained=False, progress=True, **kwargs):
-    """Constructs a ResNet-152 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
+def resnet101( progress=True, **kwargs):
+    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], progress,
                    **kwargs)
-
-
-def resnext50_32x4d(**kwargs):
-    kwargs['groups'] = 32
-    kwargs['width_per_group'] = 4
-    return _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
-                   pretrained=False, progress=True, **kwargs)
-
-
-def resnext101_32x8d(**kwargs):
-    kwargs['groups'] = 32
-    kwargs['width_per_group'] = 8
-    return _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
-                   pretrained=False, progress=True, **kwargs) 
 
